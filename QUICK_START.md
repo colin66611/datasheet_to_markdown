@@ -1,42 +1,42 @@
-# 快速开始指南
+# Quick Start Guide
 
-## 安装
+## Installation
 
 ```bash
-# 克隆仓库
+# Clone repository
 git clone git@github.com:colin66611/datasheet_to_markdown.git
 cd datasheet_to_markdown
 
-# 安装依赖
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-## 使用
+## Usage
 
-### 基础用法
+### Basic Usage
 
 ```bash
-# 转换PDF为Markdown
+# Convert PDF to Markdown
 python -m datasheet_to_markdown.cli convert input.pdf
 ```
 
-### 高级选项
+### Advanced Options
 
 ```bash
-# 指定输出目录
+# Specify output directory
 python -m datasheet_to_markdown.cli convert input.pdf --output ./output
 
-# 生成目录
+# Generate table of contents
 python -m datasheet_to_markdown.cli convert input.pdf --toc
 
-# 详细输出
+# Verbose output
 python -m datasheet_to_markdown.cli convert input.pdf --verbose
 
-# 调整置信度阈值
+# Adjust confidence threshold
 python -m datasheet_to_markdown.cli convert input.pdf --confidence 60
 ```
 
-### 完整示例
+### Complete Example
 
 ```bash
 python -m datasheet_to_markdown.cli convert \
@@ -46,37 +46,37 @@ python -m datasheet_to_markdown.cli convert \
   --verbose
 ```
 
-## 输出
+## Output
 
-转换成功后会生成:
+After successful conversion, the following will be generated:
 
-- `output/datasheet.md` - 完整的Markdown文档
-- `output/images/` - 提取的图片（如果有）
-- CLI质量报告 - 显示表格数量、置信度、覆盖率等
+- `output/datasheet.md` - Complete Markdown document
+- `output/images/` - Extracted images (if any)
+- CLI quality report - Displays table count, confidence, coverage, etc.
 
-## 质量标记
+## Quality Markers
 
-生成的Markdown中会包含:
+The generated Markdown will include:
 
-- `[MANUAL_CHECK]` - 需要人工核对的表格
-- `[UNCERTAIN]` - 可疑单元格
+- `[MANUAL_CHECK]` - Tables requiring manual review
+- `[UNCERTAIN]` - Suspicious cells
 
-使用编辑器搜索这些标记可以快速定位需要检查的内容。
+Use your editor's search function to quickly locate content that needs checking.
 
-## 测试
+## Testing
 
 ```bash
-# 运行单元测试
+# Run unit tests
 pytest tests/
 
-# 运行测试并生成覆盖率报告
+# Run tests with coverage report
 pytest --cov=datasheet_to_markdown tests/
 ```
 
-## 已知问题
+## Known Issues
 
-1. **表格准确率**: 约70%的表格需要人工核对
-2. **图片**: 当前版本未实际保存图片
-3. **标题识别**: 部分短词（如"GND"）被误识别为标题
+1. **Table Accuracy**: Approximately 70% of tables require manual verification
+2. **Images**: Current version does not actually save images
+3. **Heading Recognition**: Some short words (e.g., "GND") are incorrectly identified as headings
 
-详细内容请查看 [DEVELOPMENT_REPORT.md](DEVELOPMENT_REPORT.md)
+For detailed information, see [DEVELOPMENT_REPORT.md](DEVELOPMENT_REPORT.md)

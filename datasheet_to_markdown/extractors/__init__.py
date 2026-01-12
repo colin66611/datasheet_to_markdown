@@ -1,4 +1,4 @@
-"""提取器模块"""
+"""Extractor Modules"""
 
 from .heading import HeadingDetector
 from .table import TableExtractor

@@ -1,5 +1,63 @@
 # Datasheet to Markdown
 
+[English](#english) | [中文](#中文)
+
+---
+
+## English
+
+Convert chip datasheet (PDF format) to complete, readable Markdown documents.
+
+## Features
+
+- Complete document structure (headings, paragraphs, lists, tables, images)
+- Intelligent section recognition (regex matching + font analysis)
+- High-precision table extraction (camelot engine)
+- Confidence scoring system
+- Manual review marking mechanism
+- Automatic header/footer filtering
+- Optional table of contents generation
+
+## Installation
+
+```bash
+pip install -r requirements.txt
+```
+
+## Usage
+
+```bash
+python -m datasheet_to_markdown convert input.pdf --output ./output --toc
+```
+
+## Project Structure
+
+```
+datasheet_to_markdown/
+├── core/           # Core modules (parsing, classification, extraction)
+├── converters/     # Converters (Markdown generation)
+├── quality/        # Quality modules (confidence, marking)
+└── utils/          # Utility modules
+```
+
+## Development
+
+```bash
+# Run tests
+pytest tests/
+
+# Run tests with coverage report
+pytest --cov=datasheet_to_markdown tests/
+```
+
+## License
+
+MIT License
+
+---
+
+## 中文
+
 将芯片datasheet（PDF格式）转换为完整的、可读的Markdown文档。
 
 ## 特性

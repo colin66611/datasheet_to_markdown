@@ -1,4 +1,4 @@
-"""表格提取器 - 使用pdfplumber提取表格（MVP简化版）"""
+"""Table Extractor - Extract tables using pdfplumber (MVP simplified version)"""
 
 import os
 from typing import List, Dict, Optional, Any
@@ -9,17 +9,17 @@ logger = setup_logger(__name__)
 
 
 class TableExtractor:
-    """表格提取器（使用pdfplumber作为MVP实现）"""
+    """Table Extractor (using pdfplumber as MVP implementation)"""
 
     def __init__(self, pdf_path: str, page_num: int,
                  confidence_threshold: float = 50):
         """
-        初始化表格提取器
+        Initialize table extractor
 
         Args:
-            pdf_path: PDF文件路径
-            page_num: 页码（从1开始）
-            confidence_threshold: 置信度阈值（0-100）
+            pdf_path: PDF file path
+            page_num: page number (starting from 1)
+            confidence_threshold: confidence threshold (0-100)
         """
         self.pdf_path = pdf_path
         self.page_num = page_num
@@ -29,17 +29,17 @@ class TableExtractor:
 
     def extract(self, page: Any) -> List[Dict]:
         """
-        提取表格
+        Extract tables
 
         Args:
-            page: pdfplumber页面对象
+            page: pdfplumber page object
 
         Returns:
-            表格列表：
+            List of tables:
             [
                 {
                     "data": [["Header1", "Header2"], ["Data1", "Data2"]],
-                    "flask": 85.5,  # 模拟的准确率评分
+                    "flask": 85.5,  # Simulated accuracy score
                     "page": page_num,
                     "bbox": (x0, y0, x1, y1),
                     "needs_manual_check": False,
@@ -50,49 +50,96 @@ class TableExtractor:
         tables = []
 
         try:
-            # 使用pdfplumber提取表格
+            # Use pdfplumber to extract tables
             extracted_tables = page.extract_tables()
 
+            # Check return value type
             if not extracted_tables:
                 return tables
 
-            self.logger.debug(f"页面 {self.page_num}: 提取到 {len(extracted_tables)} 个表格")
+            # If not a list, try to convert to list
+            if not isinstance(extracted_tables, list):
+                self.logger.warning(f"Page {self.page_num}: extract_tables returned non-list type: {type(extracted_tables)}")
+                return tables
 
-            # 处理每个表格
+            self.logger.debug(f"Page {self.page_num}: Extracted {len(extracted_tables)} table(s)")
+
+            # Process each table
             for i, table in enumerate(extracted_tables):
+                # Skip non-table objects
+                if not isinstance(table, list):
+                    self.logger.warning(f"Page {self.page_num}: Table {i} is not a list type: {type(table)}")
+                    continue
+
                 table_dict = self._process_table(table, i)
                 if table_dict:
                     tables.append(table_dict)
 
         except Exception as e:
-            self.logger.warning(f"页面 {self.page_num}: 表格提取失败 - {e}")
+            self.logger.warning(f"Page {self.page_num}: Table extraction failed - {e}")
+            import traceback
+            self.logger.debug(traceback.format_exc())
 
         return tables
 
     def _process_table(self, table_data: List[List[str]], index: int) -> Optional[Dict]:
-        """处理单个表格"""
+        """Process a single table"""
         try:
-            # 过滤空行和空列
+            # Clean and filter table data
             filtered_data = []
+
             for row in table_data:
-                if row and any(cell and str(cell).strip() for cell in row):
-                    filtered_data.append([str(cell) if cell else "" for cell in row])
+                # Clean each cell: remove newlines
+                cleaned_row = []
+                for cell in row:
+                    if cell is None:
+                        cleaned_row.append("")
+                    else:
+                        # Remove newlines, replace with spaces
+                        cell_str = str(cell).replace('\n', ' ').replace('\r', ' ')
+                        # Remove extra spaces
+                        cell_str = ' '.join(cell_str.split())
+                        cleaned_row.append(cell_str)
+
+                # Only keep non-empty rows (at least one non-empty cell)
+                if cleaned_row and any(cell.strip() for cell in cleaned_row):
+                    filtered_data.append(cleaned_row)
 
             if not filtered_data:
                 return None
 
-            # 模拟flask评分（基于表格完整性）
+            # Ensure all rows have the same number of columns
+            max_cols = max(len(row) for row in filtered_data)
+            for row in filtered_data:
+                while len(row) < max_cols:
+                    row.append("")
+
+            # Remove completely empty columns on the right
+            # Check if each column has data
+            has_data = [False] * max_cols
+            for row in filtered_data:
+                for col_idx, cell in enumerate(row):
+                    if cell and cell.strip():
+                        has_data[col_idx] = True
+
+            # Find the last column with data
+            if any(has_data):
+                last_valid_col = max(i for i, data in enumerate(has_data) if data)
+                # Truncate to valid columns
+                filtered_data = [[row[i] for i in range(last_valid_col + 1)] for row in filtered_data]
+
+            # Simulate flask score (based on table completeness)
             total_cells = sum(len(row) for row in filtered_data)
             non_empty_cells = sum(sum(1 for cell in row if cell and cell.strip()) for row in filtered_data)
             flask = (non_empty_cells / total_cells * 100) if total_cells > 0 else 50
 
-            # 置信度分析
+            # Confidence analysis
             score_result = self.scorer.score_table(filtered_data, flask)
 
-            # 复杂度分析
+            # Complexity analysis
             complexity = self.scorer.analyze_table_complexity(filtered_data)
 
-            # 判断是否需要人工核对
+            # Determine if manual verification is needed
             uncertain_ratio = len(score_result["uncertain_cells"]) / (complexity["rows"] * complexity["cols"]) if complexity["rows"] > 0 else 0
             needs_check = self.scorer.needs_manual_check(
                 complexity, flask, uncertain_ratio
@@ -103,7 +150,7 @@ class TableExtractor:
                 "flask": flask,
                 "page": self.page_num,
                 "index": index,
-                "bbox": None,  # pdfplumber的extract_tables不返回bbox
+                "bbox": None,  # pdfplumber's extract_tables doesn't return bbox
                 "needs_manual_check": needs_check,
                 "uncertain_cells": score_result["uncertain_cells"],
                 "complexity": complexity,
@@ -111,12 +158,12 @@ class TableExtractor:
             }
 
             self.logger.debug(
-                f"表格 {index}: {complexity['rows']}行×{complexity['cols']}列, "
-                f"flask={flask:.2f}, 人工核对={'是' if needs_check else '否'}"
+                f"Table {index}: {complexity['rows']} rows × {complexity['cols']} cols, "
+                f"flask={flask:.2f}, manual check={'yes' if needs_check else 'no'}"
             )
 
             return result
 
         except Exception as e:
-            self.logger.error(f"处理表格失败: {e}")
+            self.logger.error(f"Failed to process table: {e}")
             return None

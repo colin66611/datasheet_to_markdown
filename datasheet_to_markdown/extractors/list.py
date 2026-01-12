@@ -1,4 +1,4 @@
-"""列表提取器"""
+"""List extractor"""
 
 from typing import List, Dict
 import re
@@ -8,25 +8,25 @@ logger = setup_logger(__name__)
 
 
 class ListExtractor:
-    """列表提取器"""
+    """List extractor"""
 
     def __init__(self):
         self.logger = logger
 
     def extract(self, text_blocks: List[str]) -> List[Dict]:
         """
-        提取列表
+        Extract lists
 
         Args:
-            text_blocks: 文本块列表
+            text_blocks: List of text blocks
 
         Returns:
-            列表项列表：
+            List of list items:
             [
                 {
                     "type": "ordered" or "unordered",
                     "items": ["Item 1", "Item 2", ...],
-                    "indent": 0  # 缩进级别
+                    "indent": 0  # Indentation level
                 }
             ]
         """
@@ -41,7 +41,7 @@ class ListExtractor:
                 list_type = self._get_list_type(text)
 
                 if current_list is None or current_list["type"] != list_type:
-                    # 开始新列表
+                    # Start new list
                     if current_list:
                         result.append(current_list)
 
@@ -51,16 +51,16 @@ class ListExtractor:
                         "indent": 0
                     }
 
-                # 添加到当前列表
+                # Add to current list
                 current_list["items"].append(text.strip())
 
             else:
-                # 非列表项，结束当前列表
+                # Not a list item, end current list
                 if current_list:
                     result.append(current_list)
                     current_list = None
 
-        # 添加最后一个列表
+        # Add the last list
         if current_list:
             result.append(current_list)
 
@@ -68,22 +68,22 @@ class ListExtractor:
 
     def _is_list_item(self, text: str) -> bool:
         """
-        判断是否为列表项
+        Determine if text is a list item
 
         Args:
-            text: 文本内容
+            text: Text content
 
         Returns:
-            True表示是列表项
+            True if it's a list item
         """
         stripped = text.strip()
 
-        # 无序列表标记
+        # Unordered list markers
         unordered_markers = ["•", "-", "*", "·"]
         if stripped and stripped[0] in unordered_markers:
             return True
 
-        # 有序列表（数字开头）
+        # Ordered list (numbered)
         if re.match(r'^\d+[\.\)]\s+', stripped):
             return True
 
@@ -91,17 +91,17 @@ class ListExtractor:
 
     def _get_list_type(self, text: str) -> str:
         """
-        获取列表类型
+        Get list type
 
         Args:
-            text: 文本内容
+            text: Text content
 
         Returns:
-            "ordered" 或 "unordered"
+            "ordered" or "unordered"
         """
         stripped = text.strip()
 
-        # 检查是否为有序列表
+        # Check if it's an ordered list
         if re.match(r'^\d+[\.\)]\s+', stripped):
             return "ordered"
 

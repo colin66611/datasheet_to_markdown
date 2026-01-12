@@ -1,4 +1,4 @@
-"""核心模块"""
+"""Core Modules"""
 
 from .parser import PDFParser
 from .classifier import ContentBlockClassifier, ContentBlock, ContentType

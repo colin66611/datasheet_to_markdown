@@ -1,4 +1,4 @@
-"""图片提取器"""
+"""Image Extractor"""
 
 import os
 from typing import List, Dict, Any
@@ -8,31 +8,31 @@ logger = setup_logger(__name__)
 
 
 class ImageExtractor:
-    """图片提取器"""
+    """Image Extractor"""
 
     def __init__(self, output_dir: str = "output/images"):
         """
-        初始化图片提取器
+        Initialize image extractor
 
         Args:
-            output_dir: 图片输出目录
+            output_dir: image output directory
         """
         self.output_dir = output_dir
         self.logger = logger
 
-        # 创建输出目录
+        # Create output directory
         os.makedirs(self.output_dir, exist_ok=True)
 
     def extract(self, page: Any, page_num: int) -> List[Dict]:
         """
-        提取图片
+        Extract images
 
         Args:
-            page: pdfplumber页面对象
-            page_num: 页码
+            page: pdfplumber page object
+            page_num: page number
 
         Returns:
-            图片信息列表：
+            List of image information:
             [
                 {
                     "path": "images/page1_img0.png",
@@ -44,26 +44,26 @@ class ImageExtractor:
         images = []
 
         try:
-            # 检查页面是否有图片
+            # Check if page has images
             if not hasattr(page, "images") or not page.images:
                 return images
 
-            # 遍历页面中的图片
+            # Iterate through images on page
             for img_index, img in enumerate(page.images):
-                # 生成文件名
+                # Generate filename
                 filename = f"page{page_num}_img{img_index}.png"
                 filepath = os.path.join(self.output_dir, filename)
 
-                # 尝试保存图片
+                # Try to save image
                 try:
-                    # pdfplumber的image对象包含stream，可以保存
+                    # pdfplumber's image object contains stream, can be saved
                     if "stream" in img:
-                        # 获取图片数据
+                        # Get image data
                         image_data = img["stream"]
 
-                        # 保存为PNG（简化版：直接使用PIL）
-                        # 注意：这里需要根据实际情况处理，可能需要额外的库
-                        # 暂时只记录路径信息
+                        # Save as PNG (simplified version: use PIL directly)
+                        # Note: This needs to be handled based on actual situation, may require additional libraries
+                        # For now, just record path information
 
                         image_info = {
                             "path": f"images/{filename}",
@@ -78,12 +78,12 @@ class ImageExtractor:
                         }
 
                         images.append(image_info)
-                        self.logger.debug(f"提取图片: {filename}")
+                        self.logger.debug(f"Extracted image: {filename}")
 
                 except Exception as e:
-                    self.logger.warning(f"保存图片失败 ({filename}): {e}")
+                    self.logger.warning(f"Failed to save image ({filename}): {e}")
 
         except Exception as e:
-            self.logger.error(f"图片提取失败: {e}")
+            self.logger.error(f"Image extraction failed: {e}")
 
         return images

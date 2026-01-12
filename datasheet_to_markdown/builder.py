@@ -1,4 +1,4 @@
-"""文档构建器 - 组装完整的Markdown文档"""
+"""Document Builder - Assembles complete Markdown documents"""
 
 from typing import List, Optional
 from .converters.markdown import MarkdownConverter
@@ -10,15 +10,15 @@ logger = setup_logger(__name__)
 
 
 class DocumentBuilder:
-    """文档构建器"""
+    """Document Builder"""
 
     def __init__(self, title: str = None, add_toc: bool = False):
         """
-        初始化文档构建器
+        Initialize document builder
 
         Args:
-            title: 文档标题
-            add_toc: 是否添加目录
+            title: Document title
+            add_toc: Whether to add table of contents
         """
         self.title = title or "Document"
         self.add_toc = add_toc
@@ -30,125 +30,125 @@ class DocumentBuilder:
 
     def add_heading(self, text: str, level: int):
         """
-        添加标题
+        Add heading
 
         Args:
-            text: 标题文本
-            level: 层级（1-6）
+            text: Heading text
+            level: Level (1-6)
         """
         markdown = self.converter.heading_to_markdown(text, level)
         self.content_parts.append(markdown)
 
-        # 记录标题用于生成目录
+        # Record heading for TOC generation
         self.headings.append({
             "level": level,
             "text": text
         })
 
-        self.logger.debug(f"添加标题: {'#' * level} {text}")
+        self.logger.debug(f"Added heading: {'#' * level} {text}")
 
     def add_paragraph(self, text: str):
-        """添加段落"""
+        """Add paragraph"""
         markdown = self.converter.paragraph_to_markdown(text)
         self.content_parts.append(markdown)
-        self.logger.debug(f"添加段落: {text[:50]}...")
+        self.logger.debug(f"Added paragraph: {text[:50]}...")
 
     def add_list(self, items: List[str], ordered: bool = False):
         """
-        添加列表
+        Add list
 
         Args:
-            items: 列表项
-            ordered: 是否有序列表
+            items: List items
+            ordered: Whether it's an ordered list
         """
         markdown = self.converter.list_to_markdown(items, ordered)
         self.content_parts.append(markdown)
-        self.logger.debug(f"添加列表: {len(items)} 项")
+        self.logger.debug(f"Added list: {len(items)} items")
 
     def add_table(self, table_data: List[List[str]],
                   caption: str = None,
                   manual_check: bool = False,
                   uncertain_cells: List[tuple] = None):
         """
-        添加表格
+        Add table
 
         Args:
-            table_data: 表格数据
-            caption: 表格标题
-            manual_check: 是否标记为需要人工核对
-            uncertain_cells: 可疑单元格坐标
+            table_data: Table data
+            caption: Table caption
+            manual_check: Whether to mark as needing manual review
+            uncertain_cells: Coordinates of uncertain cells
         """
         markdown = self.converter.table_to_markdown(
             table_data, caption, manual_check, uncertain_cells
         )
         self.content_parts.append(markdown)
         self.logger.debug(
-            f"添加表格: {len(table_data)}行×{len(table_data[0]) if table_data else 0}列, "
-            f"人工核对={'是' if manual_check else '否'}"
+            f"Added table: {len(table_data)} rows × {len(table_data[0]) if table_data else 0} cols, "
+            f"manual_check={'yes' if manual_check else 'no'}"
         )
 
     def add_image(self, path: str, alt: str = None):
         """
-        添加图片引用
+        Add image reference
 
         Args:
-            path: 图片路径
-            alt: 替代文本
+            path: Image path
+            alt: Alt text
         """
         markdown = self.converter.image_to_markdown(path, alt)
         self.content_parts.append(markdown)
-        self.logger.debug(f"添加图片: {path}")
+        self.logger.debug(f"Added image: {path}")
 
     def add_raw(self, text: str):
-        """添加原始文本"""
+        """Add raw text"""
         self.content_parts.append(text)
 
     def add_toc(self):
-        """添加目录"""
+        """Add table of contents"""
         if not self.headings:
             return
 
         toc_lines = ["## Table of Contents\n\n"]
 
         for heading in self.headings:
-            # 生成锚点
+            # Generate anchor
             anchor = heading["text"].lower().replace(" ", "-").replace(".", "")
-            # 根据层级缩进
+            # Indent based on level
             indent = "  " * (heading["level"] - 1)
             toc_lines.append(f"{indent}- [{heading['text']}](#{anchor})")
 
         toc_lines.append("\n")
         self.content_parts.insert(0, "\n".join(toc_lines))
-        self.logger.debug(f"添加目录: {len(self.headings)} 个标题")
+        self.logger.debug(f"Added TOC: {len(self.headings)} headings")
 
     def build(self) -> str:
         """
-        构建完整的Markdown文档
+        Build complete Markdown document
 
         Returns:
-            Markdown字符串
+            Markdown string
         """
-        # 添加文档标题
+        # Add document title
         document = f"# {self.title}\n\n"
 
-        # 添加目录（如果需要）
+        # Add TOC (if needed)
         if self.add_toc and self.headings:
             toc_parts = self._build_toc()
             document += toc_parts + "\n"
 
-        # 添加所有内容
+        # Add all content
         document += "".join(self.content_parts)
 
         return document
 
     def _build_toc(self) -> str:
-        """构建目录"""
+        """Build table of contents"""
         toc_lines = ["## Table of Contents\n\n"]
 
         for heading in self.headings:
-            # 生成锚点
+            # Generate anchor
             anchor = heading["text"].lower().replace(" ", "-").replace(".", "")
-            # 根据层级缩进
+            # Indent based on level
             indent = "  " * (heading["level"] - 1)
             toc_lines.append(f"{indent}- [{heading['text']}](#{anchor})")
 
@@ -157,7 +157,7 @@ class DocumentBuilder:
         return "\n".join(toc_lines)
 
     def get_stats(self) -> dict:
-        """获取文档统计信息"""
+        """Get document statistics"""
         stats = {
             "total_headings": len(self.headings),
             "headings_by_level": {},

@@ -1,4 +1,4 @@
-"""质量报告器 - 生成质量报告并输出CLI警告"""
+"""Quality Reporter - Generate quality reports and output CLI warnings"""
 
 from typing import List, Dict
 from datasheet_to_markdown.utils.logger import setup_logger
@@ -7,7 +7,7 @@ logger = setup_logger(__name__)
 
 
 class QualityReporter:
-    """质量报告器"""
+    """Quality Reporter"""
 
     def __init__(self):
         self.tables_checked: List[Dict] = []
@@ -17,7 +17,7 @@ class QualityReporter:
 
     def report_table(self, table_info: Dict):
         """
-        记录表格质量信息
+        Record table quality information
 
         Args:
             table_info:
@@ -37,61 +37,61 @@ class QualityReporter:
 
     def print_summary(self):
         """
-        输出CLI质量摘要
+        Output CLI quality summary
 
-        示例输出：
-        ⚠️ 警告：检测到 3 个需要人工核对的表格
-        ⚠️ 表格 2（第4页）：引脚功能表 - 复杂度：高
-        💡 在生成的Markdown中搜索 [MANUAL_CHECK] 可快速定位
+        Example output:
+        ⚠️  Warning: Detected 3 tables requiring manual verification
+        ⚠️  Table 2 (Page 4): Pin Functions - Complexity: High
+        💡  Search for [MANUAL_CHECK] in the generated Markdown to quickly locate
 
-        📊 质量报告：
-        - 总表格数：75
-        - 需要人工核对：3 (4%)
-        - 平均置信度：92.5%
-        - 覆盖率：99.2%
+        📊  Quality Report:
+        - Total tables: 75
+        - Manual check required: 3 (4%)
+        - Average confidence: 92.5%
+        - Coverage: 99.2%
         """
-        # 统计需要人工核对的表格
+        # Count tables requiring manual verification
         manual_check_tables = [t for t in self.tables_checked if t.get("needs_manual_check", False)]
 
         if manual_check_tables:
-            print(f"\n⚠️  警告：检测到 {len(manual_check_tables)} 个需要人工核对的表格\n")
+            print(f"\n⚠️  Warning: Detected {len(manual_check_tables)} table(s) requiring manual verification\n")
 
-            for i, table in enumerate(manual_check_tables[:5], 1):  # 最多显示5个
+            for i, table in enumerate(manual_check_tables[:5], 1):  # Show at most 5
                 page = table.get("page", "?")
                 caption = table.get("caption", f"Table {i}")
                 complexity = table.get("complexity", {})
                 complexity_score = complexity.get("complexity_score", 0)
 
                 if complexity_score > 0.7:
-                    level = "高"
+                    level = "High"
                 elif complexity_score > 0.4:
-                    level = "中"
+                    level = "Medium"
                 else:
-                    level = "低"
+                    level = "Low"
 
-                print(f"⚠️  表格 {i}（第{page}页）：{caption} - 复杂度：{level}")
+                print(f"⚠️  Table {i} (Page {page}): {caption} - Complexity: {level}")
 
             if len(manual_check_tables) > 5:
-                print(f"... 还有 {len(manual_check_tables) - 5} 个表格需要核对")
+                print(f"... and {len(manual_check_tables) - 5} more table(s) need verification")
 
-            print("\n💡 在生成的Markdown中搜索 [MANUAL_CHECK] 可快速定位\n")
+            print("\n💡  Search for [MANUAL_CHECK] in the generated Markdown to quickly locate\n")
 
-        # 输出质量报告
+        # Output quality report
         metrics = self.get_metrics()
 
-        print("📊 质量报告：")
-        print(f"- 总表格数：{metrics['total_tables']}")
-        print(f"- 需要人工核对：{metrics['manual_check_tables']} "
+        print("📊  Quality Report:")
+        print(f"- Total tables: {metrics['total_tables']}")
+        print(f"- Manual check required: {metrics['manual_check_tables']} "
               f"({metrics['manual_check_ratio'] * 100:.1f}%)")
 
         if metrics['avg_confidence'] > 0:
-            print(f"- 平均置信度：{metrics['avg_confidence']:.1f}%")
+            print(f"- Average confidence: {metrics['avg_confidence']:.1f}%")
 
-        print(f"- 覆盖率：{metrics['coverage']:.1f}%\n")
+        print(f"- Coverage: {metrics['coverage']:.1f}%\n")
 
     def get_metrics(self) -> Dict:
         """
-        获取质量指标
+        Get quality metrics
 
         Returns:
             {
@@ -107,8 +107,8 @@ class QualityReporter:
 
         avg_confidence = self.total_confidence / self.total_tables if self.total_tables > 0 else 0
 
-        # 覆盖率计算：(准确字段 + 已标注不确定字段) / 总字段
-        # 简化计算：100% - (可疑单元格比例 * 置信度折扣)
+        # Coverage calculation: (accurate fields + marked uncertain fields) / total fields
+        # Simplified calculation: 100% - (uncertain cell ratio * confidence discount)
         total_uncertain = sum(len(t.get("uncertain_cells", [])) for t in self.tables_checked)
         total_cells = sum(
             t.get("complexity", {}).get("rows", 0) * t.get("complexity", {}).get("cols", 0)
@@ -116,7 +116,7 @@ class QualityReporter:
         )
 
         uncertain_ratio = total_uncertain / total_cells if total_cells > 0 else 0
-        coverage = (1 - uncertain_ratio * 0.5) * 100  # 假设每个不确定单元格影响50%
+        coverage = (1 - uncertain_ratio * 0.5) * 100  # Assume each uncertain cell affects 50%
 
         return {
             "total_tables": self.total_tables,

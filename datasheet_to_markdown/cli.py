@@ -1,4 +1,4 @@
-"""CLI接口 - 命令行工具"""
+"""CLI Interface - Command Line Tool"""
 
 import click
 import os
@@ -13,30 +13,30 @@ logger = setup_logger(__name__)
 @click.command()
 @click.argument("pdf_path", type=click.Path(exists=True))
 @click.option("--output", "-o", type=click.Path(), default="./output",
-              help="输出目录（默认：./output）")
+              help="Output directory (default: ./output)")
 @click.option("--toc", is_flag=True, default=False,
-              help="生成目录")
+              help="Generate table of contents")
 @click.option("--verbose", "-v", is_flag=True, default=False,
-              help="详细输出")
+              help="Verbose output")
 @click.option("--confidence", "-c", type=float, default=50,
-              help="置信度阈值 0-100（默认：50）")
+              help="Confidence threshold 0-100 (default: 50)")
 def convert(pdf_path: str, output: str, toc: bool, verbose: bool, confidence: float):
     """
-    将datasheet PDF转换为Markdown文档
+    Convert datasheet PDF to Markdown document
 
-    示例：
+    Examples:
 
         python -m datasheet_to_markdown convert input.pdf --toc --verbose
 
         python -m datasheet_to_markdown convert input.pdf -o ./output --confidence 60
     """
-    # 验证置信度阈值
+    # Validate confidence threshold
     if not 0 <= confidence <= 100:
-        click.echo("错误：置信度阈值必须在0-100之间", err=True)
+        click.echo("Error: Confidence threshold must be between 0-100", err=True)
         sys.exit(1)
 
     try:
-        # 创建转换器
+        # Create converter
         converter = DatasheetConverter(
             pdf_path=pdf_path,
             output_dir=output,
@@ -45,21 +45,21 @@ def convert(pdf_path: str, output: str, toc: bool, verbose: bool, confidence: fl
             verbose=verbose
         )
 
-        # 执行转换
+        # Execute conversion
         output_file = converter.convert()
 
-        click.echo(f"\n✅ 转换成功！")
-        click.echo(f"📁 输出目录: {output}")
-        click.echo(f"📄 文档文件: {output_file}")
+        click.echo(f"\n✅ Conversion successful!")
+        click.echo(f"📁 Output directory: {output}")
+        click.echo(f"📄 Document file: {output_file}")
 
-        # 显示图片目录
+        # Show images directory
         images_dir = os.path.join(output, "images")
         if os.path.exists(images_dir):
             image_count = len([f for f in os.listdir(images_dir) if f.endswith(".png")])
-            click.echo(f"🖼️  图片数量: {image_count}")
+            click.echo(f"🖼️  Image count: {image_count}")
 
     except Exception as e:
-        click.echo(f"\n❌ 转换失败: {e}", err=True)
+        click.echo(f"\n❌ Conversion failed: {e}", err=True)
         if verbose:
             import traceback
             traceback.print_exc()
@@ -68,16 +68,16 @@ def convert(pdf_path: str, output: str, toc: bool, verbose: bool, confidence: fl
 
 @click.group()
 def cli():
-    """Datasheet to Markdown Converter - 将芯片datasheet转换为Markdown文档"""
+    """Datasheet to Markdown Converter - Convert chip datasheet to Markdown document"""
     pass
 
 
-# 添加convert命令到CLI组
+# Add convert command to CLI group
 cli.add_command(convert)
 
 
 def main():
-    """主入口"""
+    """Main entry point"""
     cli()
 
 

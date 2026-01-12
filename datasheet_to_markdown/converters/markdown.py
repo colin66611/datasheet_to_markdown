@@ -1,4 +1,4 @@
-"""Markdown转换器 - 将各种内容转换为Markdown格式"""
+"""Markdown Converter - Convert various content types to Markdown format"""
 
 from typing import List, Optional, Tuple
 from datasheet_to_markdown.utils.logger import setup_logger
@@ -7,21 +7,21 @@ logger = setup_logger(__name__)
 
 
 class MarkdownConverter:
-    """Markdown转换器"""
+    """Markdown Converter"""
 
     def __init__(self):
         self.logger = logger
 
     def heading_to_markdown(self, text: str, level: int) -> str:
         """
-        标题转Markdown
+        Convert heading to Markdown
 
         Args:
-            text: 标题文本
-            level: 层级（1-6）
+            text: heading text
+            level: heading level (1-6)
 
         Returns:
-            Markdown格式标题
+            Markdown formatted heading
         """
         if level < 1 or level > 6:
             level = 2
@@ -31,32 +31,32 @@ class MarkdownConverter:
 
     def paragraph_to_markdown(self, text: str) -> str:
         """
-        段落转Markdown
+        Convert paragraph to Markdown
 
         Args:
-            text: 段落文本
+            text: paragraph text
 
         Returns:
-            Markdown格式段落
+            Markdown formatted paragraph
         """
         if not text:
             return ""
 
-        # 清理文本
+        # Clean text
         cleaned = text.strip()
 
         return f"{cleaned}\n\n"
 
     def list_to_markdown(self, items: List[str], ordered: bool = False) -> str:
         """
-        列表转Markdown
+        Convert list to Markdown
 
         Args:
-            items: 列表项
-            ordered: 是否有序列表
+            items: list items
+            ordered: whether it's an ordered list
 
         Returns:
-            Markdown格式列表
+            Markdown formatted list
         """
         if not items:
             return ""
@@ -64,21 +64,21 @@ class MarkdownConverter:
         lines = []
         for i, item in enumerate(items):
             if ordered:
-                # 有序列表：1. Item
+                # Ordered list: 1. Item
                 prefix = f"{i + 1}."
             else:
-                # 无序列表：- Item
+                # Unordered list: - Item
                 prefix = "-"
 
-            # 清理列表项标记（如果已有）
+            # Clean list item markers (if already present)
             cleaned_item = item.strip()
-            # 移除开头的 •, -, *, · 等
+            # Remove leading •, -, *, ·, etc.
             for marker in ["•", "-", "*", "·"]:
                 if cleaned_item.startswith(marker):
                     cleaned_item = cleaned_item[1:].strip()
                     break
 
-            # 移除开头的数字+点（如果是有序列表）
+            # Remove leading number + dot (if it's an ordered list)
             if ordered:
                 import re
                 match = re.match(r'^\d+[\.\)]\s+(.+)$', cleaned_item)
@@ -94,48 +94,87 @@ class MarkdownConverter:
                          manual_check: bool = False,
                          uncertain_cells: List[Tuple[int, int]] = None) -> str:
         """
-        表格转Markdown
+        Convert table to Markdown
 
         Args:
-            table_data: 表格数据（二维列表）
-            caption: 表格标题
-            manual_check: 是否需要人工核对
-            uncertain_cells: 可疑单元格坐标
+            table_data: table data (2D list)
+            caption: table caption
+            manual_check: whether manual verification is needed
+            uncertain_cells: uncertain cell coordinates
 
         Returns:
-            Markdown格式表格
+            Markdown formatted table
         """
         if not table_data or not table_data[0]:
             return ""
 
-        # 标记可疑单元格
+        # Deep copy table data to avoid modifying original
+        import copy
+        table_data = copy.deepcopy(table_data)
+
+        # Clean cell contents: remove newlines and extra spaces
+        for row_idx, row in enumerate(table_data):
+            for col_idx in range(len(row)):
+                if row[col_idx]:
+                    # Remove newlines, replace with spaces
+                    cell = str(row[col_idx])
+                    cell = cell.replace('\n', ' ').replace('\r', ' ')
+                    # Remove extra spaces
+                    cell = ' '.join(cell.split())
+                    table_data[row_idx][col_idx] = cell
+
+        # Mark uncertain cells
         if uncertain_cells:
             cell_set = set(uncertain_cells)
             for row_idx, row in enumerate(table_data):
                 for col_idx in range(len(row)):
                     if (row_idx, col_idx) in cell_set:
-                        table_data[row_idx][col_idx] = f"{table_data[row_idx][col_idx]} [UNCERTAIN]"
+                        cell = table_data[row_idx][col_idx]
+                        # Mark empty cells as well, append marker for non-empty cells
+                        if cell and cell.strip():
+                            table_data[row_idx][col_idx] = f"{cell} [UNCERTAIN]"
+                        else:
+                            table_data[row_idx][col_idx] = "[UNCERTAIN]"
 
-        # 生成Markdown表格
+        # Find maximum column count (handle incomplete pdfplumber extraction)
+        max_cols = max(len(row) for row in table_data)
+
+        # Ensure all rows have same number of columns
+        for row in table_data:
+            while len(row) < max_cols:
+                row.append("")
+
+        # Remove completely empty columns (check from right to left)
+        has_data = [False] * max_cols
+        for row in table_data:
+            for col_idx, cell in enumerate(row):
+                if cell and cell.strip() and cell.strip() not in ['', '[UNCERTAIN]']:
+                    has_data[col_idx] = True
+
+        # Find the last column with data
+        last_valid_col = max(i for i, data in enumerate(has_data) if data)
+
+        # Truncate to valid columns
+        if last_valid_col < max_cols - 1:
+            table_data = [[row[i] for i in range(last_valid_col + 1)] for row in table_data]
+
+        # Generate Markdown table
         lines = []
 
-        # 表头
+        # Table header
         header = table_data[0]
         lines.append("| " + " | ".join(str(cell) for cell in header) + " |")
 
-        # 分隔线
+        # Separator line
         lines.append("| " + " | ".join(["---"] * len(header)) + " |")
 
-        # 数据行
+        # Data rows
         for row in table_data[1:]:
-            # 确保每行列数一致
-            while len(row) < len(header):
-                row.append("")
             lines.append("| " + " | ".join(str(cell) for cell in row) + " |")
 
         result = "\n".join(lines) + "\n\n"
 
-        # 添加标题
+        # Add caption
         if caption:
             caption_prefix = ""
             if manual_check:
@@ -147,14 +186,14 @@ class MarkdownConverter:
 
     def image_to_markdown(self, image_path: str, alt: Optional[str] = None) -> str:
         """
-        图片转Markdown
+        Convert image to Markdown
 
         Args:
-            image_path: 图片路径
-            alt: 替代文本
+            image_path: image path
+            alt: alt text
 
         Returns:
-            Markdown格式图片
+            Markdown formatted image
         """
         if not alt:
             alt = "Image"
@@ -163,17 +202,17 @@ class MarkdownConverter:
 
     def code_to_markdown(self, code: str, language: str = "") -> str:
         """
-        代码块转Markdown
+        Convert code block to Markdown
 
         Args:
-            code: 代码内容
-            language: 语言标识
+            code: code content
+            language: language identifier
 
         Returns:
-            Markdown格式代码块
+            Markdown formatted code block
         """
         return f"```{language}\n{code}\n```\n\n"
 
     def horizontal_rule(self) -> str:
-        """生成分隔线"""
+        """Generate horizontal rule"""
         return "---\n\n"

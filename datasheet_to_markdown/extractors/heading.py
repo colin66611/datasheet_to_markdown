@@ -1,4 +1,4 @@
-"""标题识别器 - 专门负责标题识别和层级提取"""
+"""Heading detector - specifically responsible for heading recognition and level extraction"""
 
 import re
 from typing import Optional, Dict
@@ -8,9 +8,9 @@ logger = setup_logger(__name__)
 
 
 class HeadingDetector:
-    """标题识别器"""
+    """Heading detector"""
 
-    # 章节号正则模式
+    # Section number regex patterns
     SECTION_PATTERNS = [
         r'^(\d+)\.\s+(.+)$',           # "1. Features"
         r'^(\d+)\.(\d+)\.\s+(.+)$',    # "2.1 Description"
@@ -23,22 +23,22 @@ class HeadingDetector:
 
     def detect(self, text: str, font_size: float = None) -> Optional[Dict]:
         """
-        检测文本是否为标题
+        Detect if text is a heading
 
         Args:
-            text: 文本内容
-            font_size: 字体大小（可选）
+            text: Text content
+            font_size: Font size (optional)
 
         Returns:
-            如果是标题，返回：
+            If it's a heading, returns:
             {
                 "level": 1-6,
-                "text": "标题文本",
+                "text": "Heading text",
                 "confidence": 0.0-1.0
             }
-            否则返回None
+            Otherwise returns None
         """
-        # 优先使用正则匹配
+        # Prefer regex matching
         for pattern in self.SECTION_PATTERNS:
             match = re.match(pattern, text.strip())
             if match:
@@ -49,8 +49,8 @@ class HeadingDetector:
                     "confidence": 0.95
                 }
 
-        # 备选：根据字体大小判断
-        if font_size and font_size > 14:  # 假设普通文本字体≤14
+        # Alternative: judgment based on font size
+        if font_size and font_size > 14:  # Assume regular text font ≤ 14
             return {
                 "level": self._estimate_level_from_font(font_size),
                 "text": text.strip(),
@@ -61,24 +61,24 @@ class HeadingDetector:
 
     def extract_level(self, text: str) -> int:
         """
-        从标题文本中提取层级
+        Extract level from heading text
 
         Args:
-            text: 标题文本
+            text: Heading text
 
         Returns:
-            层级（1-6）
+            Level (1-6)
         """
         for pattern in self.SECTION_PATTERNS:
             match = re.match(pattern, text.strip())
             if match:
                 return self._extract_level_from_pattern(pattern, match)
 
-        # 默认2级
+        # Default level 2
         return 2
 
     def _extract_level_from_pattern(self, pattern: str, match: re.Match) -> int:
-        """从正则匹配结果中提取层级"""
+        """Extract level from regex match result"""
         # "1. Features" → Level 1
         if r'^(\d+)\.\s+' in pattern:
             return 1
@@ -91,14 +91,14 @@ class HeadingDetector:
         if r'^(\d+)\.(\d+)\.(\d+)\s+' in pattern:
             return 3
 
-        # 全大写标题 → Level 2
+        # All-caps heading → Level 2
         if r'^([A-Z][A-Z\s\d]+)$' in pattern:
             return 2
 
         return 2
 
     def _estimate_level_from_font(self, font_size: float) -> int:
-        """根据字体大小估算层级"""
+        """Estimate level based on font size"""
         if font_size >= 20:
             return 1
         elif font_size >= 16:

@@ -1,4 +1,4 @@
-"""置信度分析器 - 对提取的内容进行置信度评分"""
+"""Confidence Analyzer - Perform confidence scoring on extracted content"""
 
 from typing import List, Tuple, Dict
 from datasheet_to_markdown.utils.logger import setup_logger
@@ -7,28 +7,28 @@ logger = setup_logger(__name__)
 
 
 class ConfidenceScorer:
-    """置信度分析器"""
+    """Confidence Analyzer"""
 
     def __init__(self, threshold: float = 50):
         """
-        初始化置信度分析器
+        Initialize confidence analyzer
 
         Args:
-            threshold: 可疑度阈值（0-100），超过此值标记为可疑
+            threshold: Suspicion threshold (0-100), above this value marked as suspicious
         """
         self.threshold = threshold
         self.logger = logger
 
     def score_table(self, table_data: List[List[str]], flask: float) -> Dict:
         """
-        对表格进行置信度评分
+        Perform confidence scoring on table
 
         Args:
-            table_data: 表格数据
-            flask: camelot的准确率评分
+            table_data: table data
+            flask: camelot accuracy score
 
         Returns:
-            评分结果：
+            Scoring result:
             {
                 "overall_confidence": 0.0-100,
                 "cell_confidence": [[0.9, 0.8, 0.95], ...],
@@ -50,7 +50,7 @@ class ConfidenceScorer:
         uncertain_cells = []
         issues = []
 
-        # 逐个评分单元格
+        # Score each cell individually
         for row_idx, row in enumerate(table_data):
             row_scores = []
             for col_idx, cell in enumerate(row):
@@ -63,14 +63,14 @@ class ConfidenceScorer:
 
             cell_confidence.append(row_scores)
 
-        # 计算总体置信度
+        # Calculate overall confidence
         flat_scores = [score for row in cell_confidence for score in row]
         overall = sum(flat_scores) / len(flat_scores) if flat_scores else 0.0
 
-        # 结合camelot的flask评分
+        # Combine with camelot's flask score
         overall = (overall + flask) / 2
 
-        self.logger.debug(f"表格置信度: {overall:.2f}, 可疑单元格: {len(uncertain_cells)}")
+        self.logger.debug(f"Table confidence: {overall:.2f}, uncertain cells: {len(uncertain_cells)}")
 
         return {
             "overall_confidence": overall,
@@ -81,12 +81,12 @@ class ConfidenceScorer:
 
     def _score_cell(self, cell: str) -> float:
         """
-        单元格评分
+        Score a cell
 
-        规则：
-        - 空单元格：0分
-        - 截断文本：20分
-        - 正常文本：100分
+        Rules:
+        - Empty cell: 0 points
+        - Truncated text: 20 points
+        - Normal text: 100 points
         """
         if not cell or str(cell).strip() == "":
             return 0.0
@@ -100,12 +100,12 @@ class ConfidenceScorer:
 
     def _is_truncated(self, text: str) -> bool:
         """
-        检测截断文本
+        Detect truncated text
 
-        规则：
-        - 包含"..."
-        - 以"<"或">"结尾
-        - 包含"(continued)"
+        Rules:
+        - Contains "..."
+        - Ends with "<" or ">"
+        - Contains "(continued)"
         """
         indicators = ["...", "(continued)", "(Continued)"]
 
@@ -113,7 +113,7 @@ class ConfidenceScorer:
             if ind in text:
                 return True
 
-        # 以<或>结尾
+        # Ends with < or >
         if text.endswith("<") or text.endswith(">"):
             return True
 
@@ -121,13 +121,13 @@ class ConfidenceScorer:
 
     def analyze_table_complexity(self, table_data: List[List[str]]) -> Dict:
         """
-        分析表格复杂度
+        Analyze table complexity
 
         Args:
-            table_data: 表格数据
+            table_data: table data
 
         Returns:
-            复杂度分析：
+            Complexity analysis:
             {
                 "rows": 34,
                 "cols": 7,
@@ -141,7 +141,7 @@ class ConfidenceScorer:
         rows = len(table_data)
         cols = len(table_data[0]) if table_data else 0
 
-        # 检查空单元格
+        # Check for empty cells
         empty_count = 0
         total_cells = rows * cols
 
@@ -152,9 +152,9 @@ class ConfidenceScorer:
 
         has_empty = empty_count > 0
 
-        # 复杂度评分（0-1）
-        # 大表格、多空单元格会增加复杂度
-        size_complexity = min((rows * cols) / 200, 1.0)  # 最多200个单元格
+        # Complexity score (0-1)
+        # Large tables and many empty cells increase complexity
+        size_complexity = min((rows * cols) / 200, 1.0)  # Maximum 200 cells
         empty_complexity = min(empty_count / total_cells, 1.0) if total_cells > 0 else 0
 
         complexity_score = (size_complexity + empty_complexity) / 2
@@ -170,30 +170,30 @@ class ConfidenceScorer:
     def needs_manual_check(self, complexity: Dict, flask: float,
                           uncertain_ratio: float) -> bool:
         """
-        判断是否需要人工核对
+        Determine if manual verification is needed
 
-        触发条件（满足任一）：
-        - 行数 > 20 或 列数 > 6
+        Trigger conditions (any one met):
+        - Rows > 20 or Columns > 6
         - flask < 80
-        - 可疑单元格比例 > 50%
+        - Uncertain cell ratio > 50%
 
         Args:
-            complexity: 复杂度分析
-            flask: 准确率评分
-            uncertain_ratio: 可疑单元格比例
+            complexity: complexity analysis
+            flask: accuracy score
+            uncertain_ratio: uncertain cell ratio
 
         Returns:
-            True表示需要人工核对
+            True indicates manual verification is needed
         """
-        # 条件1: 表格尺寸过大
+        # Condition 1: Table size too large
         if complexity.get("rows", 0) > 20 or complexity.get("cols", 0) > 6:
             return True
 
-        # 条件2: 准确率低
+        # Condition 2: Low accuracy
         if flask < 80:
             return True
 
-        # 条件3: 可疑单元格比例高
+        # Condition 3: High uncertain cell ratio
         if uncertain_ratio > 0.5:
             return True
 

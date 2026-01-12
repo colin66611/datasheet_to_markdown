@@ -1,4 +1,4 @@
-"""Python模块主入口"""
+"""Main entry point for Python module"""
 
 from .cli import main
 

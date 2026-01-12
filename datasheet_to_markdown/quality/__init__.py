@@ -1,4 +1,4 @@
-"""质量模块"""
+"""Quality Modules"""
 
 from .reporter import QualityReporter
 
